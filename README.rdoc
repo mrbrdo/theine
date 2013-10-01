@@ -15,6 +15,11 @@ You need to have pry in your project's Gemfile:
 
 This is because Theine can only work with Pry for rails console at the moment.
 
+== Upgrading
+
+If you want to use Ruby MRI for the client, you will probably need to re-run
+theine_set_ruby after upgrading.
+
 == Using
 
 Start up the theine server in the root of your Rails project:
@@ -67,40 +72,27 @@ next worker. When `false`, the first worker should start just a little bit faste
 If you have a high number of min_free_workers then I recommend stting this to
 `false`.
 
-== Using with Foreman
-
-At the moment you can only use Theine with Foreman if you do not set the client to
-use Ruby MRI (theine_set_ruby command). So you should not do that.
-
-Other than that it's pretty easy. Because the theine command will wait for a
-server to become available if it's not, it will work even if the theine server is
-started after the client. So basically:
-
-  theine_server: bundle exec theine_server
-  server: theine rails server
-  
-== Speed up theine
-
-If you have any problems in this mode, please revert back to using the same Ruby
-for the client.
+== Speed up Theine
 
 If you are using RVM or rbenv, you can tell theine to use Ruby 1.9 or Ruby 2.0
 to run the client, which will make the Theine client start much faster.
 
-=== Find Ruby MRI path
+If you have any problems in this mode, please revert back to using the same Ruby
+for the client.
 
-  $ rvm use ruby-2.0.0
-  Using /Users/mrbrdo/.rvm/gems/ruby-2.0.0-p247
-  $ which ruby
+=== Tell Theine to use Ruby MRI for the client
+
+Figure out where your Ruby 1.9 or 2.0 binary is:
+
+  $ rvm ruby-2.0.0 do which ruby
   /Users/mrbrdo/.rvm/rubies/ruby-2.0.0-p247/bin/ruby
 
-=== Tell Theine to use MRI for the client
+Then where you plan to use Theine, do:
 
-Then go back to JRuby where you have theine installed and tell theine to use it:
-
+  $ rvm use jruby
   $ theine_set_ruby /Users/mrbrdo/.rvm/rubies/ruby-2.0.0-p247/bin/ruby
 
-Enjoy faster times:
+Enjoy megae fast client:
 
   time theine runner "puts 'hello world'"
   0.12s user 0.02s system 30% cpu 0.470 total
@@ -125,6 +117,18 @@ So in other words, the options to pass to jruby are:
 
   -Xcompile.invokedynamic=false -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -J-noverify -Xcompile.mode=OFF
 
+== Using with Foreman
+
+At the moment you can only use Theine with Foreman if you do not set the client to
+use Ruby MRI (theine_set_ruby command). So you should not do that.
+
+Other than that it's pretty easy. Because the theine command will wait for a
+server to become available if it's not, it will work even if the theine server is
+started after the client. So basically:
+
+  theine_server: bundle exec theine_server
+  server: theine rails server
+  
 == How it works
 
 Theine's server spawns processes in the background that load your Rails
