@@ -19,7 +19,7 @@ class PrailsServer
   end
 
   def add_instance
-    path = File.expand_path('../instance.rb', __FILE__)
+    path = File.expand_path('../worker.rb', __FILE__)
     port = @available_ports.shift
     puts "(spawn #{port})"
     spawn("ruby", path, PRAILS_BASE_PORT.to_s, port.to_s, RAILS_APP_ROOT)
@@ -27,7 +27,7 @@ class PrailsServer
   end
 
   def instance_boot(port)
-    puts "+ instance #{port}"
+    puts "+ worker #{port}"
 
     @instances_mutex.synchronize do
       @spawning.pop
@@ -35,15 +35,15 @@ class PrailsServer
     end
   end
 
+  def instance_done(port)
+    puts "- worker #{port}"
+  end
+
   def get_port
     add_instance if all_size == 0
 
-    port = nil
-    while port.nil? && all_size > 0
-      @instances_mutex.synchronize do
-        port = @instances.shift
-      end
-      sleep 0.1 unless port
+    port = @instances_mutex.synchronize do
+      @instances.shift
     end
 
     Thread.new { check_min_free_instances }

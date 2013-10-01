@@ -27,6 +27,10 @@ class PrailsServer
     rescue NameError
       0
     end
+
+    def gets(*args)
+      input.gets(*args)
+    end
   end
 
   def initialize
@@ -111,4 +115,8 @@ DRb.start_service("druby://localhost:#{instance_port}", PrailsServer.new)
 balancer = DRbObject.new_with_uri("druby://localhost:#{base_port}")
 balancer.instance_boot(instance_port)
 
-DRb.thread.join
+begin
+  DRb.thread.join
+ensure
+  balancer.instance_done(instance_port)
+end

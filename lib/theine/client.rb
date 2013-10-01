@@ -31,6 +31,10 @@ class IOUndumpedProxy
     end
   end
 
+  def gets(*args)
+    @obj.gets(*args)
+  end
+
   def puts(*lines)
     @obj.puts(*lines)
   end
@@ -59,32 +63,89 @@ class IOUndumpedProxy
   end
 end
 
-argv = ARGV.dup
-ARGV.clear
+module Theine
+  class Client
+    def self.start
+      new
+    end
+
+    def initialize
+      reset_argv!
+      trap_signals
+      begin
+        connect_worker
+        redirect_io
+        run_command
+      ensure
+        stop
+      end
+    end
+
+    def stop(sleep_for = 0.1)
+      begin
+        if @worker
+          %x[kill -2 #{@worker.pid}] # TODO: if client was term-ed, term worker (maybe term)
+          puts "Stopping Theine worker."
+          sleep(sleep_for) if sleep_for > 0 # to finish receiving IO
+        end
+      rescue DRb::DRbConnError
+      end
+      exit(0)
+    end
+
+  private
+    def run_command
+      @worker.command_rails(@argv)
+    rescue DRb::DRbConnError
+      $stderr.puts "\nTheine closed the connection."
+    end
+
+    def reset_argv!
+      @argv = ARGV.dup
+      ARGV.clear
+    end
+
+    def trap_signals
+      trap('INT') { exit(0) } # TODO: is this needed?
+      trap('TERM') { exit(0) }
+    end
+
+    def redirect_io
+      @worker.stdin = IOUndumpedProxy.new($stdin)
+      @worker.stdout = IOUndumpedProxy.new($stdout)
+      @worker.stderr = IOUndumpedProxy.new($stderr)
+    end
+
+    def connect_worker
+      balancer = wait_until_result("Cannot connect to theine server. Waiting") do
+        object = DRbObject.new_with_uri("druby://localhost:#{PRAILS_BASE_PORT}")
+        object.respond_to?(:get_port) # test if connected
+        object
+      end
+      port = wait_until_result("Waiting for Theine worker...") do
+        balancer.get_port
+      end
+      @worker = DRbObject.new_with_uri("druby://localhost:#{port}")
+    end
+
+    WaitResultNoResultError = Class.new(StandardError)
+    def wait_until_result(wait_message)
+      result = nil
+      dots = 0
+      begin
+        result = yield
+        raise WaitResultNoResultError unless result
+      rescue DRb::DRbConnError, WaitResultNoResultError
+        print dots == 0 ? wait_message : "."
+        dots += 1
+        sleep 0.5
+        retry
+      end
+      print "\n" if dots > 0
+      result
+    end
+  end
+end
 
 DRb.start_service
-
-i = 1
-begin
-  balancer = DRbObject.new_with_uri("druby://localhost:#{PRAILS_BASE_PORT}")
-  sleep 0.1 until port = balancer.get_port
-  prails = DRbObject.new_with_uri("druby://localhost:#{port}")
-rescue DRb::DRbConnError
-  sleep 0.5
-  putc "."
-  i += 1
-  retry
-end
-putc "\n"
-
-trap('INT') {
-  %x[kill -2 #{prails.pid}]
-}
-
-prails.stdin = IOUndumpedProxy.new($stdin)
-prails.stdout = IOUndumpedProxy.new($stdout)
-prails.stderr = IOUndumpedProxy.new($stderr)
-begin
-  prails.command_rails(argv)
-rescue DRb::DRbConnError
-end
+Theine::Client.start
