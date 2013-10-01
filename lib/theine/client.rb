@@ -110,11 +110,22 @@ module Theine
         @argv.shift
         @worker.command_rspec(@argv)
       else
-        @argv.shift
+        if ["c", "console"].include?(@argv[0])
+          load_pry_history
+        end
         @worker.command_rails(@argv)
       end
     rescue DRb::DRbConnError
       $stderr.puts "\nTheine closed the connection."
+    end
+
+    def load_pry_history 
+      history_file = File.expand_path("~/.pry_history")
+      if File.exist?(history_file)
+        File.readlines(history_file).pop(100).each do |line|
+          Readline::HISTORY << line[0, line.size-1]
+        end
+      end
     end
 
     def reset_argv!
@@ -129,7 +140,7 @@ module Theine
 
     def redirect_io
       # Need to be careful that these don't get garbage collected
-      $stdin_undumped = @worker.stdin = IOUndumpedProxy.new($stdin)
+      $stdin_undumped = @worker.stdin = IOUndumpedProxy.new(Readline)
       $stdout_undumped = @worker.stdout = IOUndumpedProxy.new($stdout)
       $stderr_undumped = @worker.stderr = IOUndumpedProxy.new($stderr)
     end
