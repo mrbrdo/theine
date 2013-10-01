@@ -93,6 +93,16 @@ next worker. When `false`, the first worker should start just a little bit faste
 If you have a high number of min_free_workers then I recommend to set this to
 `false`.
 
+== Using with Foreman
+
+You can use it with foreman easily. Because the theine command will wait for a
+server to become available if it's not, it will work even if the theine server is
+started after the client. So basically:
+
+  theine_server: bundle exec theine_server
+  server: theine rails server
+  
+
 == How it works
 
 Theine's server spawns processes in the background that load your Rails
