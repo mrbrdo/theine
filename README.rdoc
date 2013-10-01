@@ -90,7 +90,7 @@ as you execute a command.
 When set to `true`, Theine will start min_free_workers all at once. When set to
 `false`, it will start one worker first, and when it is loaded, it will start the
 next worker. When `false`, the first worker should start just a little bit faster.
-If you have a high number of min_free_workers then I recommend to set this to
+If you have a high number of min_free_workers then I recommend stting this to
 `false`.
 
 == Using with Foreman
@@ -115,6 +115,6 @@ will exit. When you run a new command, it will run in another pre-loaded process
 
 Theine will automatically spawn additional processes as needed.
 
-The client (`theine` command) does need to run on JRuby (or the same Ruby that
+The client (`theine` command) does not need to run on JRuby (or the same Ruby that
 you use in your Rails application), because it is only used to connect to the
 server, all the code is then actually executed on the server.
