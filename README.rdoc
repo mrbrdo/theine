@@ -46,9 +46,14 @@ Start up the theine server in the root of your Rails project:
 
 Then run any rails command using theine (don't use bundle exec):
 
+  # Rails commands
   theine runner "puts 'Hello world'"
   theine server
   theine console
+
+  # Rake, rspec
+  theine rake db:migrate
+  theine rspec spec
 
 == Configuration
 

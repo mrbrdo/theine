@@ -97,7 +97,16 @@ module Theine
 
   private
     def run_command
-      @worker.command_rails(@argv)
+      case @argv[0]
+      when "rake"
+        @argv.shift
+        @worker.command_rake(@argv)
+      when "rspec"
+        @argv.shift
+        @worker.command_rspec(@argv)
+      else
+        @worker.command_rails(@argv)
+      end
     rescue DRb::DRbConnError
       $stderr.puts "\nTheine closed the connection."
     end

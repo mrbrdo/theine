@@ -46,13 +46,30 @@ module Theine
 
       require 'pry'
       ::Rails.application.config.console = Pry
-
-      Pry.config.input = stdin
-      Pry.config.output = stdout
+      pry_setup
 
       require 'rails/commands'
       sleep 0.1 # allow Pumps to finish
       DRb.stop_service
+    end
+
+    def command_rake(argv)
+      pry_setup
+      ::Rails.application.load_tasks
+      argv.each do |task|
+        ::Rake::Task[task].invoke
+      end
+    end
+
+    def command_rspec(argv)
+      pry_setup
+      require 'rspec/core'
+      ::RSpec::Core::Runner.run(argv, $stderr, $stdout)
+    end
+
+    def pry_setup
+      ::Pry.config.input = stdin
+      ::Pry.config.output = stdout
     end
 
     def stdin=(value)
