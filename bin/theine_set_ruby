@@ -3,13 +3,16 @@ script = <<EOS
 #!/bin/sh
 RUBY_CMD="%RUBY_CMD%"
 
-$RUBY_CMD -e "require 'theine/client'" "$@"
+$RUBY_CMD -e "require '%CLIENT_RB_PATH%'" "$@"
 EOS
 
 if ARGV[0]
   path = %x[which theine]
+  client_rb_path = File.expand_path('../../lib/theine/client.rb', __FILE__)
   File.open(path.strip, "w") do |f|
-    f.write(script.gsub("%RUBY_CMD%", ARGV[0]))
+    script.gsub!("%CLIENT_RB_PATH%", client_rb_path)
+    script.gsub!("%RUBY_CMD%", ARGV[0])
+    f.write(script)
   end
   puts "Set theine to run using #{ARGV[0]}."
 else
