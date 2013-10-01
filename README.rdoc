@@ -95,7 +95,10 @@ If you have a high number of min_free_workers then I recommend to set this to
 
 == Using with Foreman
 
-You can use it with foreman easily. Because the theine command will wait for a
+At the moment you can only use Theine with Foreman if you do not set the client to
+use Ruby MRI (theine_set_ruby command). So you should not do that.
+
+Other than that it's pretty easy. Because the theine command will wait for a
 server to become available if it's not, it will work even if the theine server is
 started after the client. So basically:
 
