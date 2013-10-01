@@ -1,6 +1,2 @@
-#!/bin/sh
-PWD="$( pwd )"
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../lib/theine" && pwd )"
-
-cd $PWD
-bundle exec ruby "$DIR/server.rb"
+#!/usr/bin/env ruby
+require 'theine/server'

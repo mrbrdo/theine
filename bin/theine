@@ -1,6 +1,2 @@
-#!/bin/sh
-PWD="$(pwd)"
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../lib/theine" && pwd )"
-RUBY_CMD="ruby"
-
-$RUBY_CMD "$DIR/client.rb" "$@"
+#!/usr/bin/env ruby
+require 'theine/client'
