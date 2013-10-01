@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'theine'
-  s.version     = '0.0.1'
+  s.version     = '0.0.2'
   s.summary     = "Theine"
   s.description = "A Rails preloader for JRuby"
   s.authors     = ["Jan Berdajs"]
@@ -9,6 +9,7 @@ Gem::Specification.new do |s|
                    "lib/theine/server.rb", "lib/theine/instance.rb"]
   s.executables << 'theine'
   s.executables << 'theine_server'
+  s.executables << 'theine_set_ruby'
   s.homepage    = 'https://github.com/mrbrdo/theine'
   s.license     = 'MIT'
 end

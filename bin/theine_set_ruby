@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+script = <<EOS
+#!/bin/sh
+RUBY_CMD="%RUBY_CMD%"
+
+$RUBY_CMD -e "require 'theine/client'" "$@"
+EOS
+
+if ARGV[0]
+  path = %x[which theine]
+  File.open(path.strip, "w") do |f|
+    f.write(script.gsub("%RUBY_CMD%", ARGV[0]))
+  end
+  puts "Set theine to run using #{ARGV[0]}."
+else
+  puts "Usage: theine_set_ruby /path/to/ruby_executable"
+end
