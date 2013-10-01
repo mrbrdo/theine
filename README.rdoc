@@ -15,32 +15,6 @@ You need to have pry in your project's Gemfile:
 
 This is because Theine can only work with Pry for rails console at the moment.
 
-== Speed up theine
-
-If you have any problems in this mode, please revert back to using the same Ruby
-for the client.
-
-If you are using RVM or rbenv, you can tell theine to use Ruby 1.9 or Ruby 2.0
-to run the client, which will make the Theine client start much faster.
-
-=== Find Ruby MRI path
-
-  $ rvm use ruby-2.0.0
-  Using /Users/mrbrdo/.rvm/gems/ruby-2.0.0-p247
-  $ which ruby
-  /Users/mrbrdo/.rvm/rubies/ruby-2.0.0-p247/bin/ruby
-
-=== Tell Theine to use MRI for the client
-
-Then go back to JRuby where you have theine installed and tell theine to use it:
-
-  $ theine_set_ruby /Users/mrbrdo/.rvm/rubies/ruby-2.0.0-p247/bin/ruby
-
-Enjoy faster times:
-
-  time theine runner "puts 'hello world'"
-  0.12s user 0.02s system 30% cpu 0.470 total
-
 == Using
 
 Start up the theine server in the root of your Rails project:
@@ -105,6 +79,51 @@ started after the client. So basically:
   theine_server: bundle exec theine_server
   server: theine rails server
   
+== Speed up theine
+
+If you have any problems in this mode, please revert back to using the same Ruby
+for the client.
+
+If you are using RVM or rbenv, you can tell theine to use Ruby 1.9 or Ruby 2.0
+to run the client, which will make the Theine client start much faster.
+
+=== Find Ruby MRI path
+
+  $ rvm use ruby-2.0.0
+  Using /Users/mrbrdo/.rvm/gems/ruby-2.0.0-p247
+  $ which ruby
+  /Users/mrbrdo/.rvm/rubies/ruby-2.0.0-p247/bin/ruby
+
+=== Tell Theine to use MRI for the client
+
+Then go back to JRuby where you have theine installed and tell theine to use it:
+
+  $ theine_set_ruby /Users/mrbrdo/.rvm/rubies/ruby-2.0.0-p247/bin/ruby
+
+Enjoy faster times:
+
+  time theine runner "puts 'hello world'"
+  0.12s user 0.02s system 30% cpu 0.470 total
+
+=== JRuby settings
+
+I put this into my `~/.rvm/hooks/after_use_jruby_custom' and chmoded it a+x. It makes JRuby start up noticably faster for Rails projects.
+
+  #!/usr/bin/env bash
+
+  \. "${rvm_path}/scripts/functions/hooks/jruby"
+
+  if [[ "${rvm_ruby_string}" =~ "jruby" ]]
+  then
+    jruby_options_append "-Xcompile.invokedynamic=false -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -J-noverify -Xcompile.mode=OFF"
+  else
+    jruby_options_remove "${PROJECT_JRUBY_OPTS[@]}"
+    jruby_clean_project_options
+  fi
+
+So in other words, the options to pass to jruby are:
+
+  -Xcompile.invokedynamic=false -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -J-noverify -Xcompile.mode=OFF
 
 == How it works
 
