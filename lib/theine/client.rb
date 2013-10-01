@@ -87,7 +87,6 @@ module Theine
       begin
         if @worker
           %x[kill -2 #{@worker.pid}] # TODO: if client was term-ed, term worker (maybe term)
-          puts "Stopping Theine worker."
           sleep(sleep_for) if sleep_for > 0 # to finish receiving IO
         end
       rescue DRb::DRbConnError
@@ -105,6 +104,7 @@ module Theine
         @argv.shift
         @worker.command_rspec(@argv)
       else
+        @argv.shift
         @worker.command_rails(@argv)
       end
     rescue DRb::DRbConnError

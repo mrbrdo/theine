@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'theine'
-  s.version     = '0.0.4'
+  s.version     = '0.0.5'
   s.summary     = "Theine"
   s.description = "A Rails preloader for JRuby"
   s.authors     = ["Jan Berdajs"]
