@@ -17,7 +17,8 @@ This is because Theine can only work with Pry for rails console at the moment.
 
 == Speed up theine
 
-Not recommended at the moment due to some issues with PRY.
+If you have any problems in this mode, please revert back to using the same Ruby
+for the client.
 
 If you are using RVM or rbenv, you can tell theine to use Ruby 1.9 or Ruby 2.0
 to run the client, which will make the Theine client start much faster.

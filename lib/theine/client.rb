@@ -30,6 +30,12 @@ class IOUndumpedProxy
     end
   end
 
+  def readline_arity
+    method(:readline).arity
+  rescue NameError
+    0
+  end
+
   def gets(*args)
     @obj.gets(*args)
   end
@@ -122,9 +128,10 @@ module Theine
     end
 
     def redirect_io
-      @worker.stdin = IOUndumpedProxy.new($stdin)
-      @worker.stdout = IOUndumpedProxy.new($stdout)
-      @worker.stderr = IOUndumpedProxy.new($stderr)
+      # Need to be careful that these don't get garbage collected
+      $stdin_undumped = @worker.stdin = IOUndumpedProxy.new($stdin)
+      $stdout_undumped = @worker.stdout = IOUndumpedProxy.new($stdout)
+      $stderr_undumped = @worker.stderr = IOUndumpedProxy.new($stderr)
     end
 
     def connect_worker

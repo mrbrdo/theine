@@ -24,9 +24,7 @@ module Theine
       end
 
       def readline_arity
-        input.method_missing(:method, :readline).arity
-      rescue NameError
-        0
+        input.readline_arity
       end
 
       def gets(*args)
@@ -45,7 +43,7 @@ module Theine
       ARGV.concat(argv)
 
       require 'pry'
-      ::Rails.application.config.console = Pry
+      ::Rails.application.config.console = ::Pry
       pry_setup
 
       require 'rails/commands'
