@@ -1,0 +1,37 @@
+= Theine
+
+Theine is a Rails application pre-loader designed to work on JRuby.
+It is similar to Zeus, Spring and Spork. The problem with Zeus and Spring is
+that they use `fork` which doesn't work on JRuby.
+
+== Installing
+
+  gem install theine
+
+You don't need to add it to your project's Gemfile.
+
+You need to have pry in your project's Gemfile:
+  gem 'pry'
+
+This is because Theine can only work with Pry for rails console at the moment.
+
+== Using
+
+Start up the theine server in the root of your Rails project:
+
+  bundle exec theine_server
+
+Then run any rails command using theine (don't use bundle exec):
+
+  theine runner "puts 'Hello world'"
+  theine server
+  theine console
+
+== How it works
+
+Theine's server spawns processes in the background that load your Rails
+application. When you run a command through theine, it will be executed in
+one of these pre-loaded processes. After your command is done, the process
+will exit. When you run a new command, it will run in another pre-loaded process.
+
+Theine will automatically spawn additional processes as needed.
