@@ -15,18 +15,19 @@ You need to have pry in your project's Gemfile:
 
 This is because Theine can only work with Pry for rails console at the moment.
 
-== Speed up theine even more (recommended)
+== Speed up theine (recommended)
 
 If you are using RVM or rbenv, you can tell theine to use Ruby 1.9 or Ruby 2.0
-to run the client (theine executable). Because Ruby MRI starts up much faster
-than JRuby, you will speed theine up for about one more second.
+to run the client, which will make the Theine client start much faster.
 
-Figure out where the binary for the other Ruby is:
+=== Find Ruby MRI path
 
   $ rvm use ruby-2.0.0
   Using /Users/mrbrdo/.rvm/gems/ruby-2.0.0-p247
   $ which ruby
   /Users/mrbrdo/.rvm/rubies/ruby-2.0.0-p247/bin/ruby
+
+=== Tell Theine to use MRI for the client
 
 Then go back to JRuby where you have theine installed and tell theine to use it:
 
@@ -49,6 +50,41 @@ Then run any rails command using theine (don't use bundle exec):
   theine server
   theine console
 
+== Configuration
+
+Theine will look for a `.theine` file in your Rails app's root directory and
+in your home directory. Both files are loaded if they exist, the one in your
+Rails app will overwrite settings from your home.
+
+Example .theine file (YAML):
+
+  base_port: 11000
+  max_port: 11100
+  min_free_workers: 2
+  spawn_parallel: true
+
+=== base_port and max_port
+
+The Theine server will use the base_port TCP port. Workers use base_port + 1 to
+max_port TCP ports. Use this setting if you need to run multiple Rails apps
+at the same time (use a different base_port for each).
+
+=== min_free_workers
+
+The minimum amount of workers that Theine should try to keep around. If you set
+this to 2 for example, once Theine has loaded 2 workers, you can execute two
+commands immediately. When you execute a third command, you will have to wait
+until Theine has spawned new workers. Theine will spawn a new worker as soon
+as you execute a command.
+
+=== spawn_parallel
+
+When set to `true`, Theine will start min_free_workers all at once. When set to
+`false`, it will start one worker first, and when it is loaded, it will start the
+next worker. When `false`, the first worker should start just a little bit faster.
+If you have a high number of min_free_workers then I recommend to set this to
+`false`.
+
 == How it works
 
 Theine's server spawns processes in the background that load your Rails
@@ -57,3 +93,7 @@ one of these pre-loaded processes. After your command is done, the process
 will exit. When you run a new command, it will run in another pre-loaded process.
 
 Theine will automatically spawn additional processes as needed.
+
+The client (`theine` command) does need to run on JRuby (or the same Ruby that
+you use in your Rails application), because it is only used to connect to the
+server, all the code is then actually executed on the server.

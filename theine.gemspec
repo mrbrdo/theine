@@ -6,7 +6,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Jan Berdajs"]
   s.email       = 'mrbrdo@mrbrdo.net'
   s.files       = ["lib/theine.rb", "lib/theine/client.rb",
-                   "lib/theine/server.rb", "lib/theine/worker.rb"]
+                   "lib/theine/server.rb", "lib/theine/worker.rb",
+                   "lib/theine/config.rb"]
   s.executables << 'theine'
   s.executables << 'theine_server'
   s.executables << 'theine_set_ruby'

@@ -1,7 +1,6 @@
 require 'drb/drb'
 require 'readline'
-
-PRAILS_BASE_PORT = 11000
+require_relative './config'
 
 class IOUndumpedProxy
   include DRb::DRbUndumped
@@ -69,7 +68,10 @@ module Theine
       new
     end
 
+    attr_reader :config
+
     def initialize
+      @config = ConfigReader.new(Dir.pwd)
       reset_argv!
       trap_signals
       begin
@@ -118,7 +120,7 @@ module Theine
 
     def connect_worker
       balancer = wait_until_result("Cannot connect to theine server. Waiting") do
-        object = DRbObject.new_with_uri("druby://localhost:#{PRAILS_BASE_PORT}")
+        object = DRbObject.new_with_uri("druby://localhost:#{config.base_port}")
         object.respond_to?(:get_port) # test if connected
         object
       end

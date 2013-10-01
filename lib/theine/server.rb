@@ -1,75 +1,84 @@
 require 'drb/drb'
 require 'thread'
+require 'yaml'
+require_relative './config'
 
-PRAILS_BASE_PORT = 11000
-PRAILS_MAX_PORT = 11100
-MIN_FREE_INSTANCES = 2
-RAILS_APP_ROOT = Dir.pwd
+module Theine
+  class Server
+    include DRb::DRbUndumped
+    attr_reader :config
 
-class PrailsServer
-  include DRb::DRbUndumped
+    def initialize
+      @config = ConfigReader.new(Dir.pwd)
 
-  def initialize
-    @instances = []
-    @spawning = []
+      @workers = []
+      @spawning = []
 
-    @available_ports = ((PRAILS_BASE_PORT + 1)..PRAILS_MAX_PORT).to_a
-    @check_mutex = Mutex.new
-    @instances_mutex = Mutex.new
-  end
+      @available_ports = ((config.base_port + 1)..config.max_port).to_a
+      @check_mutex = Mutex.new
+      @workers_mutex = Mutex.new
 
-  def add_instance
-    path = File.expand_path('../worker.rb', __FILE__)
-    port = @available_ports.shift
-    puts "(spawn #{port})"
-    spawn("ruby", path, PRAILS_BASE_PORT.to_s, port.to_s, RAILS_APP_ROOT)
-    @instances_mutex.synchronize { @spawning << 1 }
-  end
-
-  def instance_boot(port)
-    puts "+ worker #{port}"
-
-    @instances_mutex.synchronize do
-      @spawning.pop
-      @instances << port
-    end
-  end
-
-  def instance_done(port)
-    puts "- worker #{port}"
-  end
-
-  def get_port
-    add_instance if all_size == 0
-
-    port = @instances_mutex.synchronize do
-      @instances.shift
+      run
     end
 
-    Thread.new { check_min_free_instances }
+    def add_worker
+      path = File.expand_path('../worker.rb', __FILE__)
+      port = @available_ports.shift
+      puts "(spawn #{port})"
+      spawn("ruby", path, config.base_port.to_s, port.to_s, config.rails_root)
+      @workers_mutex.synchronize { @spawning << 1 }
+    end
 
-    port
-  end
+    def worker_boot(port)
+      puts "+ worker #{port}"
 
-  def check_min_free_instances
-    if @check_mutex.try_lock
-      # TODO: mutex, and dont do it if already in progress
-      # do this in thread
-      while all_size < MIN_FREE_INSTANCES
-        sleep 0.1 until @instances_mutex.synchronize { @spawning.empty? }
-        add_instance
+      @workers_mutex.synchronize do
+        @spawning.pop
+        @workers << port
       end
-      @check_mutex.unlock
     end
-  end
 
-  def all_size
-    @instances_mutex.synchronize { @instances.size + @spawning.size }
+    def worker_done(port)
+      puts "- worker #{port}"
+    end
+
+    def get_port
+      add_worker if all_size == 0
+
+      port = @workers_mutex.synchronize do
+        @workers.shift
+      end
+
+      Thread.new { check_min_free_workers }
+
+      port
+    end
+
+    def check_min_free_workers
+      if @check_mutex.try_lock
+        # TODO: mutex, and dont do it if already in progress
+        # do this in thread
+        while all_size < config.min_free_workers
+          unless config.spawn_parallel
+            sleep 0.1 until @workers_mutex.synchronize { @spawning.empty? }
+          end
+          add_worker
+        end
+        @check_mutex.unlock
+      end
+    end
+
+    def all_size
+      @workers_mutex.synchronize { @workers.size + @spawning.size }
+    end
+  private
+    def run
+      DRb.start_service("druby://localhost:#{config.base_port}", self)
+      check_min_free_workers
+      DRb.thread.join
+    end
   end
 end
 
-server = PrailsServer.new
-DRb.start_service("druby://localhost:#{PRAILS_BASE_PORT}", server)
+server = Theine::Server.new
 
-server.check_min_free_instances
-DRb.thread.join
