@@ -96,14 +96,19 @@ Then where you plan to use Theine, do:
   $ rvm use jruby
   $ theine_set_ruby /Users/mrbrdo/.rvm/rubies/ruby-2.0.0-p247/bin/ruby
 
-Enjoy megae fast client:
+Enjoy mega fast client:
 
   time theine runner "puts 'hello world'"
   0.12s user 0.02s system 30% cpu 0.470 total
 
 === JRuby settings
 
-I put this into my `~/.rvm/hooks/after_use_jruby_custom' and chmoded it a+x. It makes JRuby start up noticably faster for Rails projects.
+I recommend you pass these options to JRuby
+
+  -Xcompile.invokedynamic=false -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -J-noverify -Xcompile.mode=OFF
+
+It will speed up the startup time noticably for all JRuby apps (especially Rails).
+Example RVM hook `~/.rvm/hooks/after_use_jruby_custom' (chmod a+x):
 
   #!/usr/bin/env bash
 
@@ -116,10 +121,6 @@ I put this into my `~/.rvm/hooks/after_use_jruby_custom' and chmoded it a+x. It 
     jruby_options_remove "${PROJECT_JRUBY_OPTS[@]}"
     jruby_clean_project_options
   fi
-
-So in other words, the options to pass to jruby are:
-
-  -Xcompile.invokedynamic=false -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -J-noverify -Xcompile.mode=OFF
 
 == Using with Foreman
 
