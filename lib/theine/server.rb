@@ -18,6 +18,8 @@ module Theine
       @check_mutex = Mutex.new
       @workers_mutex = Mutex.new
 
+      $port_map = {}
+
       run
     end
 
@@ -25,8 +27,33 @@ module Theine
       path = File.expand_path('../worker.rb', __FILE__)
       port = @available_ports.shift
       puts "(spawn #{port})"
-      spawn("ruby", path, config.base_port.to_s, port.to_s, config.rails_root)
+      $stdout.puts "adding worker"
+      if RUBY_PLATFORM == 'java'
+        JRuby.runtime.getInstanceConfig.setRunRubyInProcess(true)
+        $port_map[port] = org.jruby.util.ShellLauncher.run(
+          JRuby.runtime,
+          ["ruby", path, config.base_port.to_s,
+            port.to_s, config.rails_root
+            ].to_java(org.jruby.runtime.builtin.IRubyObject),
+            false.to_java)
+        puts port
+        p $port_map[port]
+        #puts "sleep"
+        #sleep 90
+        #puts "sleep end"
+        #process.destroy()
+        #Thread.new { system("ruby \"#{path}\" #{config.base_port} #{port} \"#{config.rails_root}\"") }
+      else
+        spawn("ruby", path, config.base_port.to_s, port.to_s, config.rails_root)
+      end
       @workers_mutex.synchronize { @spawning << 1 }
+    end
+
+    def stop_worker(port)
+      puts port.to_s
+      p $port_map
+      p $port_map[port.to_i]
+      $port_map[port.to_i].destroy
     end
 
     def worker_boot(port)

@@ -39,6 +39,18 @@ module Theine
     def command_rails(argv)
       rails_reload!
 
+      # Thread.new do
+      #   i = 0
+      #   begin
+      #     File.open("/Users/mrbrdo/1", "w") do |f|
+      #       i += 1
+      #       f.write(i.to_s + "\n")
+      #     end
+      #     sleep 1
+      #   end until false
+      # end
+
+
       ARGV.clear
       ARGV.concat(argv)
 
@@ -46,7 +58,17 @@ module Theine
       ::Rails.application.config.console = ::Pry
       pry_setup
 
-      require 'rails/commands'
+        require 'rails/commands'
+      # thread = Thread.new do
+      #   require 'rails/commands'
+      # end
+      # while thread.alive?
+      #   sleep 1
+      #   if @stop
+      #     thread.kill
+      #     puts "thread killed"
+      #   end
+      # end
       sleep 0.1 # allow Pumps to finish
       DRb.stop_service
     end
@@ -65,9 +87,11 @@ module Theine
       ::RSpec::Core::Runner.run(argv, $stderr, $stdout)
     end
 
-    def pry_setup
-      ::Pry.config.input = stdin
-      ::Pry.config.output = stdout
+    def stop!
+      $real_stdout.puts "worker: stop!"
+      #balancer.worker_done(worker_port)
+      #@stop = true
+      Kernel.exit(0)
     end
 
     def stdin=(value)
@@ -96,6 +120,11 @@ module Theine
     end
 
   private
+    def pry_setup
+      ::Pry.config.input = stdin
+      ::Pry.config.output = stdout
+    end
+
     def patch_out_io(io, write_to)
       # This is done because Rails 'remembers' $stdout in some places when it's
       # loaded, for example for logging SQL in the Rails console.
@@ -137,7 +166,8 @@ end
 
 base_port = ARGV[0]
 worker_port = ARGV[1]
-DRb.start_service("druby://localhost:#{worker_port}", Theine::Worker.new)
+worker = Theine::Worker.new
+DRb.start_service("druby://localhost:#{worker_port}", worker)
 
 balancer = DRbObject.new_with_uri("druby://localhost:#{base_port}")
 balancer.worker_boot(worker_port)
@@ -145,5 +175,5 @@ balancer.worker_boot(worker_port)
 begin
   DRb.thread.join
 ensure
-  balancer.worker_done(worker_port)
+  worker.stop!
 end

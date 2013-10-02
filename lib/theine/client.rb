@@ -91,8 +91,11 @@ module Theine
 
     def stop(sleep_for = 0.1)
       begin
+        puts "stopping"
         if @worker
-          %x[kill -2 #{@worker.pid}] # TODO: if client was term-ed, term worker (maybe term)
+          #@worker.stop!
+          @balancer.stop_worker(@port)
+          #%x[kill -2 #{@worker.pid}] # TODO: if client was term-ed, term worker (maybe term)
           sleep(sleep_for) if sleep_for > 0 # to finish receiving IO
         end
       rescue DRb::DRbConnError
@@ -119,7 +122,7 @@ module Theine
       $stderr.puts "\nTheine closed the connection."
     end
 
-    def load_pry_history 
+    def load_pry_history
       history_file = File.expand_path("~/.pry_history")
       if File.exist?(history_file)
         File.readlines(history_file).pop(100).each do |line|
@@ -134,7 +137,7 @@ module Theine
     end
 
     def trap_signals
-      trap('INT') { exit(0) } # TODO: is this needed?
+      trap('INT') { exit(0) }
       trap('TERM') { exit(0) }
     end
 
@@ -145,16 +148,20 @@ module Theine
       $stderr_undumped = @worker.stderr = IOUndumpedProxy.new($stderr)
     end
 
-    def connect_worker
-      balancer = wait_until_result("Cannot connect to theine server. Waiting") do
+    def connect_balancer
+      @balancer = wait_until_result("Cannot connect to theine server. Waiting") do
         object = DRbObject.new_with_uri("druby://localhost:#{config.base_port}")
         object.respond_to?(:get_port) # test if connected
         object
       end
-      port = wait_until_result("Waiting for Theine worker...") do
-        balancer.get_port
+    end
+
+    def connect_worker
+      connect_balancer
+      @port = wait_until_result("Waiting for Theine worker...") do
+        @balancer.get_port
       end
-      @worker = DRbObject.new_with_uri("druby://localhost:#{port}")
+      @worker = DRbObject.new_with_uri("druby://localhost:#{@port}")
     end
 
     WaitResultNoResultError = Class.new(StandardError)
