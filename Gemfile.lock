@@ -1,11 +1,23 @@
 PATH
   remote: .
   specs:
-    theine (0.0.8)
+    theine (0.0.9)
+      pry
 
 GEM
   remote: http://rubygems.org/
   specs:
+    coderay (1.0.9)
+    ffi (1.9.0-java)
+    method_source (0.8.2)
+    pry (0.9.12.2-java)
+      coderay (~> 1.0.5)
+      method_source (~> 0.8)
+      slop (~> 3.4)
+      spoon (~> 0.0)
+    slop (3.4.6)
+    spoon (0.0.4)
+      ffi
 
 PLATFORMS
   java

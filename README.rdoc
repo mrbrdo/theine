@@ -6,6 +6,7 @@ that they use `fork` which doesn't work on JRuby.
 
   time rails runner "puts Rails.env"
   48.31s user 1.96s system 242% cpu 20.748 total  # normal
+  time theine runner "puts Rails.env"
   0.12s  user 0.02s system 32%  cpu 0.449  total  # Theine
 
 == Installing
@@ -130,8 +131,10 @@ will need to use theine_current_ruby because Foreman uses bundle exec and
 theine won't work if you previously used theine_set_ruby.
 So basically:
 
-  theine_server: bundle exec theine_server
-  server: theine_current_ruby rails server
+  theine_server: theine_server
+  server: theine_current_ruby server
+
+If you have problems, try adding theine to your Gemfile.
 
 == How it works
 
