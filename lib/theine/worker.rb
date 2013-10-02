@@ -76,7 +76,7 @@ module Theine
     end
 
     def stdout=(value)
-      $orig_stdout = $stdout
+      patch_out_io($stdout, value)
       @stdout = value
       r, w = IO.pipe
       $stdout = w
@@ -84,7 +84,7 @@ module Theine
     end
 
     def stderr=(value)
-      $orig_stderr = $stderr
+      patch_out_io($stderr, value)
       @stderr = value
       r, w = IO.pipe
       $stderr = w
@@ -96,6 +96,16 @@ module Theine
     end
 
   private
+    def patch_out_io(io, write_to)
+      # This is done because Rails 'remembers' $stdout in some places when it's
+      # loaded, for example for logging SQL in the Rails console.
+      # We have to pre-load Rails and at that point we do not know what to change
+      # $stdout to, so this is why we patch it here.
+      io.singleton_class.send :define_method, :write do |*args, &block|
+        write_to.write(*args, &block)
+      end
+    end
+
     def rails_reload!
       ActionDispatch::Reloader.cleanup!
       ActionDispatch::Reloader.prepare!
