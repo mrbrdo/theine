@@ -125,16 +125,17 @@ Example RVM hook `~/.rvm/hooks/after_use_jruby_custom' (chmod a+x):
 
 == Using with Foreman
 
-Because the theine command will wait for a server to become available if it's
-not, it will work even if the theine server is started after the client. You
-will need to use theine_current_ruby because Foreman uses bundle exec and
-theine won't work if you previously used theine_set_ruby.
-So basically:
+Theine works with Foreman:
 
   theine_server: theine_server
-  server: theine_current_ruby server
+  server: rails server
 
 If you have problems, try adding theine to your Gemfile.
+If you want to use the theine client in foreman, you should use
+theine_current_ruby because Foreman uses bundle exec. But there is no point in
+doing that, since theine needs to spawn a process for each command anyway, so
+there is no benefit in comparison to just running the command (like rails server)
+directly.
 
 == How it works
 
