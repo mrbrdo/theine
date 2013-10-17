@@ -7,6 +7,7 @@ class IOUndumpedProxy
 
   def initialize(obj)
     @obj = obj
+    create_method_proxies
   end
 
   def completion_proc=(val)
@@ -36,35 +37,41 @@ class IOUndumpedProxy
     0
   end
 
-  def gets(*args)
-    @obj.gets(*args)
-  end
-
-  def puts(*lines)
-    @obj.puts(*lines)
-  end
-
-  def print(*objs)
-    @obj.print(*objs)
-  end
-
-  def write(data)
-    @obj.write data
-  end
-
   def <<(data)
     @obj << data
     self
-  end
-
-  def flush
-    @obj.flush
   end
 
   # Some versions of Pry expect $stdout or its output objects to respond to
   # this message.
   def tty?
     false
+  end
+
+private
+  # http://www.ruby-doc.org/core-1.9.3/IO.html
+  # Creating method proxies. We take this approach so that method.arity will
+  # give the correct result (if we just used *args it would always return -1).
+  # Can't use SimpleDelegator, won't work over DRb
+  def create_method_proxies
+    (@obj.public_methods - public_methods).each do |meth|
+      next unless @obj.respond_to?(meth)
+      arity = @obj.method(meth).arity
+      if arity >= 0
+        args = arity.times.map { |i| "a#{i+1}" }
+      else
+        args = (arity.abs - 1).times.map { |i| "a#{i+1}" }
+        args << "*args"
+        args = args
+      end
+      args = (args + ["&block"]).join(", ")
+
+      singleton_class.class_eval <<-EOS
+        def #{meth}(#{args})
+          @obj.send(:#{meth}, #{args})
+        end
+      EOS
+    end
   end
 end
 
@@ -119,7 +126,7 @@ module Theine
       $stderr.puts "\nTheine closed the connection."
     end
 
-    def load_pry_history 
+    def load_pry_history
       history_file = File.expand_path("~/.pry_history")
       if File.exist?(history_file)
         File.readlines(history_file).pop(100).each do |line|

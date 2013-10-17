@@ -3,34 +3,24 @@ APP_PATH = "#{root_path}/config/application"
 require "#{root_path}/config/boot"
 require "#{root_path}/config/environment"
 require 'drb/drb'
+require 'delegate'
 
 $real_stdout = $stdout
 $real_stderr = $stderr
 
 module Theine
-  class Worker
-    attr_reader :stdin, :stdout, :stderr
-    InputProxy = Struct.new :input do
-      # Reads a line from the input
-      def readline(prompt)
-        case readline_arity
-        when 1 then input.readline(prompt)
-        else        input.readline
-        end
-      end
-
-      def completion_proc=(val)
-        input.completion_proc = val
-      end
-
-      def readline_arity
-        input.readline_arity
-      end
-
-      def gets(*args)
-        input.gets(*args)
+  class InputProxy < SimpleDelegator
+    # Reads a line from the input
+    def readline(prompt)
+      case readline_arity
+      when 1 then __getobj__.readline(prompt)
+      else        __getobj__.readline
       end
     end
+  end
+
+  class Worker
+    attr_reader :stdin, :stdout, :stderr
 
     def initialize
       @pumps = []
