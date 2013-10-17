@@ -29,7 +29,14 @@ theine_set_ruby after upgrading.
 
 Start up the theine server in the root of your Rails project:
 
+If using bundler:
+
   bundle exec theine_server
+  
+As a RubyGems:
+
+  theine_server
+
 
 Then run any rails command using theine (don't use bundle exec):
 
