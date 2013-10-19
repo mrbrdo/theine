@@ -3,137 +3,82 @@ APP_PATH = "#{root_path}/config/application"
 require "#{root_path}/config/boot"
 require "#{root_path}/config/environment"
 require 'drb/drb'
-require 'delegate'
-
-$real_stdout = $stdout
-$real_stderr = $stderr
 
 module Theine
-  class InputProxy < SimpleDelegator
-    # Reads a line from the input
-    def readline(prompt)
-      case readline_arity
-      when 1 then __getobj__.readline(prompt)
-      else        __getobj__.readline
-      end
-    end
-  end
-
   class Worker
-    attr_reader :stdin, :stdout, :stderr
+    attr_reader :command_proc
 
     def initialize
       @pumps = []
+      @command_proc = proc { }
     end
 
     def command_rails(argv)
-      rails_reload!
-
       ARGV.clear
       ARGV.concat(argv)
 
-      require 'pry'
-      ::Rails.application.config.console = ::Pry
-      pry_setup
-
-      require 'rails/commands'
-      sleep 0.1 # allow Pumps to finish
-      DRb.stop_service
+      set_command do
+        require 'rails/commands'
+      end
     end
 
     def command_rake(argv)
-      pry_setup
-      ::Rails.application.load_tasks
-      argv.each do |task|
-        ::Rake::Task[task].invoke
+      set_command do
+        ::Rails.application.load_tasks
+        argv.each do |task|
+          ::Rake::Task[task].invoke
+        end
       end
     end
 
     def command_rspec(argv)
-      pry_setup
-      require 'rspec/core'
-      ::RSpec::Core::Runner.run(argv, $stderr, $stdout)
-    end
-
-    def pry_setup
-      ::Pry.config.input = stdin
-      ::Pry.config.output = stdout
-    end
-
-    def stdin=(value)
-      @stdin = InputProxy.new(value)
-      $stdin = @stdin
-    end
-
-    def stdout=(value)
-      patch_out_io($stdout, value)
-      @stdout = value
-      r, w = IO.pipe
-      $stdout = w
-      @pumps << Pump.new(r, @stdout)
-    end
-
-    def stderr=(value)
-      patch_out_io($stderr, value)
-      @stderr = value
-      r, w = IO.pipe
-      $stderr = w
-      @pumps << Pump.new(r, @stderr)
+      set_command do
+        require 'rspec/core'
+        ::RSpec::Core::Runner.run(argv, $stderr, $stdout)
+      end
     end
 
     def pid
       ::Process.pid
     end
 
+    def stop!
+      exit(1)
+    end
+
   private
-    def patch_out_io(io, write_to)
-      # This is done because Rails 'remembers' $stdout in some places when it's
-      # loaded, for example for logging SQL in the Rails console.
-      # We have to pre-load Rails and at that point we do not know what to change
-      # $stdout to, so this is why we patch it here.
-      io.singleton_class.send :define_method, :write do |*args, &block|
-        write_to.write(*args, &block)
-      end
+    def set_command(&block)
+      rails_reload!
+      @command_proc = block
+      DRb.stop_service
     end
 
     def rails_reload!
       ActionDispatch::Reloader.cleanup!
       ActionDispatch::Reloader.prepare!
     end
-
-    class Pump < Thread
-      def initialize(input, output)
-        if output
-          @input = input
-          @output = output
-          super(&method(:main))
-        else
-          close_stream(input)
-        end
-      end
-
-    private
-      def main
-        while buf = @input.sysread(1024)
-          @output.print(buf)
-          @output.flush
-        end
-      ensure
-        @output.close
-      end
-    end
   end
+end
+
+def exit_prompt
+  print "\n"
+  puts "Press Enter to finish."
+  $stdin.gets
 end
 
 base_port = ARGV[0]
 worker_port = ARGV[1]
-DRb.start_service("druby://localhost:#{worker_port}", Theine::Worker.new)
+
+worker = Theine::Worker.new
+DRb.start_service("druby://localhost:#{worker_port}", worker)
 
 balancer = DRbObject.new_with_uri("druby://localhost:#{base_port}")
 balancer.worker_boot(worker_port)
 
 begin
   DRb.thread.join
+  worker.command_proc.call
 ensure
+  #exit_prompt
   balancer.worker_done(worker_port)
 end

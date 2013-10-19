@@ -25,7 +25,11 @@ module Theine
       path = File.expand_path('../worker.rb', __FILE__)
       port = @available_ports.shift
       puts "(spawn #{port})"
-      spawn("ruby", path, config.base_port.to_s, port.to_s, config.rails_root)
+      spawn("screen", "-d", "-m", "-S", "theine#{port}",
+        "sh", "-c",
+        "ruby #{path} #{config.base_port.to_s} #{port.to_s} #{config.rails_root}; read -p 'Press [Enter] to exit...\n'")
+        #"ruby", path, config.base_port.to_s, port.to_s, config.rails_root,
+        #"&&", "read", "-p", "Press [Enter] to exit...")
       @workers_mutex.synchronize { @spawning << 1 }
     end
 
@@ -42,14 +46,14 @@ module Theine
       puts "- worker #{port}"
     end
 
-    def get_port
-      add_worker if all_size == 0
+    def get_port(spawn_new = true)
+      add_worker if spawn_new && all_size == 0
 
       port = @workers_mutex.synchronize do
         @workers.shift
       end
 
-      Thread.new { check_min_free_workers }
+      Thread.new { check_min_free_workers } if spawn_new
 
       port
     end
@@ -71,6 +75,16 @@ module Theine
     def all_size
       @workers_mutex.synchronize { @workers.size + @spawning.size }
     end
+
+    def stop_all!
+      # TODO: doesn't seem to work
+      while port = get_port(false)
+        begin
+          DRbObject.new_with_uri("druby://localhost:#{port}").stop!
+        rescue
+        end
+      end
+    end
   private
     def run
       DRb.start_service("druby://localhost:#{config.base_port}", self)
@@ -80,5 +94,9 @@ module Theine
   end
 end
 
-server = Theine::Server.new
+begin
+  server = Theine::Server.new
+ensure
+  server.stop_all!
+end
 
