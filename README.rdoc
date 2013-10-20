@@ -15,11 +15,6 @@ that they use `fork` which doesn't work on JRuby.
 
 You don't need to add it to your project's Gemfile.
 
-You need to have pry in your project's Gemfile:
-  gem 'pry'
-
-This is because Theine can only work with Pry for rails console at the moment.
-
 == Upgrading
 
 If you want to use Ruby MRI for the client, you will probably need to re-run
@@ -143,8 +138,10 @@ directly.
 
 Theine's server spawns processes in the background that load your Rails
 application. When you run a command through theine, it will be executed in
-one of these pre-loaded processes. After your command is done, the process
-will exit. When you run a new command, it will run in another pre-loaded process.
+one of these pre-loaded processes. I used to do IO redirection (similarly to
+pry-remote) but it ended up being very unreliable, so now I am using screen to
+take care of this. After your command is done, the process will exit. When you
+run a new command, it will run in another pre-loaded process.
 
 Theine will automatically spawn additional processes as needed.
 
