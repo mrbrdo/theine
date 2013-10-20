@@ -23,19 +23,25 @@ module Theine
 
   private
     def attach_screen
-      exec("screen -r theine#{@port}")
+      # Using vt100 because it does not have smcup/rmcup support,
+      # which means the output of the screen will stay shown after
+      # screen closes.
+      set_vt_100 = "export TERM=vt100; tset"
+      erase_screen_message = "echo '\\033[2A\\033[K'"
+      exec("#{set_vt_100}; screen -r theine#{@port}; #{erase_screen_message}")
     end
 
     def run_command
-      case @argv[0]
+      argv = @argv.dup
+      command = argv.shift
+
+      case command
       when "rake"
-        @argv.shift
-        @worker.command_rake(@argv)
+        @worker.command_rake(argv)
       when "rspec"
-        @argv.shift
-        @worker.command_rspec(@argv)
+        @worker.command_rspec(argv)
       else
-        @worker.command_rails(@argv)
+        @worker.command_rails([command] + argv)
       end
     rescue DRb::DRbConnError
       $stderr.puts "\nTheine closed the connection."

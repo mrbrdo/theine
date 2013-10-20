@@ -29,7 +29,7 @@ module Theine
       puts "(spawn #{port})"
       spawn("screen", "-d", "-m", "-S", worker_session_name(port),
         "sh", "-c",
-        "ruby #{path} #{config.base_port.to_s} #{port.to_s} #{config.rails_root}; read -p 'Press [Enter] to exit...\n'")
+        "ruby #{path} #{config.base_port.to_s} #{port.to_s} #{config.rails_root}")
       @workers_mutex.synchronize { @spawning_workers << port }
     end
 
