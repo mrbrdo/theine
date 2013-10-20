@@ -1,7 +1,5 @@
-root_path = ARGV[2]
-APP_PATH = "#{root_path}/config/application"
-require "#{root_path}/config/boot"
-require "#{root_path}/config/environment"
+RAILS_ROOT_PATH = ARGV[2]
+APP_PATH = "#{RAILS_ROOT_PATH}/config/application"
 require 'drb/drb'
 
 module Theine
@@ -11,6 +9,11 @@ module Theine
     def initialize
       @pumps = []
       @command_proc = proc { }
+    end
+
+    def boot
+      require "#{RAILS_ROOT_PATH}/config/boot"
+      require "#{RAILS_ROOT_PATH}/config/environment"
     end
 
     def command_rails(argv)
@@ -45,7 +48,6 @@ module Theine
     def stop!
       exit(1)
     end
-
   private
     def set_command(&block)
       rails_reload!
@@ -60,25 +62,21 @@ module Theine
   end
 end
 
-def exit_prompt
-  print "\n"
-  puts "Press Enter to finish."
-  $stdin.gets
-end
-
 base_port = ARGV[0]
-worker_port = ARGV[1]
+worker_port = ARGV[1].to_i
 
 worker = Theine::Worker.new
-DRb.start_service("druby://localhost:#{worker_port}", worker)
 
 balancer = DRbObject.new_with_uri("druby://localhost:#{base_port}")
+balancer.set_worker_pid(worker_port, worker.pid)
+
+worker.boot
+DRb.start_service("druby://localhost:#{worker_port}", worker)
 balancer.worker_boot(worker_port)
 
 begin
   DRb.thread.join
   worker.command_proc.call
 ensure
-  #exit_prompt
   balancer.worker_done(worker_port)
 end
