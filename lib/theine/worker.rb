@@ -17,9 +17,8 @@ module Theine
     end
 
     def command_rails(argv)
-      ARGV.clear
-      ARGV.concat(argv)
-
+      set_argv(argv)
+      
       set_command do
         require 'rails/commands'
       end
@@ -35,9 +34,11 @@ module Theine
     end
 
     def command_rspec(argv)
+      set_argv(argv)
+
       set_command do
         require 'rspec/core'
-        ::RSpec::Core::Runner.run(argv, $stderr, $stdout)
+        RSpec::Core::Runner.autorun
       end
     end
 
@@ -53,6 +54,11 @@ module Theine
       rails_reload!
       @command_proc = block
       DRb.stop_service
+    end
+
+    def set_argv(argv)
+      ARGV.clear
+      ARGV.concat(argv)
     end
 
     def rails_reload!
