@@ -12,7 +12,7 @@ module Theine
       },
       rake: proc {
         ::Rails.application.load_tasks
-        argv.each do |task|
+        ARGV.each do |task|
           ::Rake::Task[task].invoke
         end
       },
