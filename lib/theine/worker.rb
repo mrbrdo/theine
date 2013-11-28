@@ -11,12 +11,23 @@ module Theine
         require 'rails/commands'
       },
       rake: proc {
-        ::Rails.application.load_tasks
+        ::Rails.application.load_tasks if defined? ::Rails
+
         ARGV.each do |task|
+          is_test_task = task =~ /^(spec|test)$/
+          if is_test_task
+            previous_env = ENV["RAILS_ENV"] || ENV["RACK_ENV"] || "development"
+            change_rails_env_to("test")
+          end
+
           ::Rake::Task[task].invoke
+
+          change_rails_env_to(previous_env) if is_test_task
         end
       },
       rspec: proc {
+        change_rails_env_to("test")
+
         require 'rspec/core'
         RSpec::Core::Runner.autorun
       }
@@ -36,7 +47,7 @@ module Theine
         sleep 0.1 while !screen_attached?
 
         puts "command: #{@command_name} #{argv_to_s}"
-        @command_proc.call
+        instance_exec(&@command_proc)
       ensure
         balancer.worker_done(port)
       end
@@ -71,6 +82,18 @@ module Theine
       @command_name = command_name
       @command_proc = block
       DRb.stop_service
+    end
+
+    def change_rails_env_to(env)
+      ENV['RAILS_ENV'] = env
+      ENV['RACK_ENV'] = env
+      if defined? ::Rails
+        ::Rails.env = env
+
+        # load config/environments/test.rb
+        test_env_rb = ::Rails.root.join("config/environments/#{env}.rb")
+        load(test_env_rb) if File.exist?(test_env_rb)
+      end
     end
 
     def argv_to_s
