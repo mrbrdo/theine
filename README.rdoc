@@ -11,6 +11,12 @@ that they use `fork` which doesn't work on JRuby.
 
 == Installing
 
+You need to install screen on your system. For example on Ubuntu:
+
+  sudo apt-get install screen
+  
+Then install the gem.
+
   gem install theine
 
 You don't need to add it to your project's Gemfile.
