@@ -93,6 +93,10 @@ module Theine
         # load config/environments/test.rb
         test_env_rb = ::Rails.root.join("config/environments/#{env}.rb")
         load(test_env_rb) if File.exist?(test_env_rb)
+
+        if defined? ActiveRecord
+          ActiveRecord::Base.establish_connection rescue nil
+        end
       end
     end
 
