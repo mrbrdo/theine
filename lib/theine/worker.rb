@@ -11,6 +11,7 @@ module Theine
         require 'rails/commands'
       },
       rake: proc {
+        require 'rake'
         ::Rails.application.load_tasks if defined? ::Rails
 
         ARGV.each do |task|
