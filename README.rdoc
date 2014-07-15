@@ -75,7 +75,7 @@ as you execute a command.
 When set to `true`, Theine will start min_free_workers all at once. When set to
 `false`, it will start one worker first, and when it is loaded, it will start the
 next worker. When `false`, the first worker should start just a little bit faster.
-If you have a high number of min_free_workers then I recommend stting this to
+If you have a high number of min_free_workers then I recommend setting this to
 `false`.
 
 == Speed up Theine
