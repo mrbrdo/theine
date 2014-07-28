@@ -26,10 +26,10 @@ module Theine
     def add_worker
       path = File.expand_path('../worker.rb', __FILE__)
       port = @workers_mutex.synchronize { @available_ports.shift }
-      puts "(spawn #{port})"
+      puts "(spawn #{"#{port} #{debug}".strip})"
       spawn("screen", "-d", "-m", "-S", worker_session_name(port),
         "sh", "-c",
-        "ruby #{path} #{config.base_port.to_s} #{port.to_s} #{config.rails_root}")
+        "jruby #{debug} #{path} #{config.base_port.to_s} #{port.to_s} #{config.rails_root}")
       @workers_mutex.synchronize { @spawning_workers << port }
     end
 
@@ -126,6 +126,10 @@ module Theine
       DRb.start_service("druby://localhost:#{config.base_port}", self)
       check_min_free_workers
       DRb.thread.join
+    end
+
+    def debug
+      "--debug" if ARGV.any? {|a| a.to_s.strip == "--debug" }
     end
   end
 end
