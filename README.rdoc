@@ -32,6 +32,11 @@ Start up the theine server in the root of your Rails project:
 
   theine_server
 
+You can also add `--debug` mode so that the spawned workers will be running
+in debug mode:
+
+  theine_server --debug
+
 Then run any rails command using theine (don't use bundle exec):
 
   # Rails commands
