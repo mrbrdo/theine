@@ -98,6 +98,10 @@ module Theine
         if defined? ActiveRecord
           ActiveRecord::Base.establish_connection rescue nil
         end
+
+        if defined? SequelRails
+          Sequel::Model.db = SequelRails.setup env
+        end
       end
     end
 
