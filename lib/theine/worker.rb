@@ -8,7 +8,12 @@ module Theine
 
     COMMANDS = {
       rails: proc {
-        require 'rails/commands'
+        local_path = File.join(Rails.root, "script/rails")
+        if File.exists?(local_path)
+          load 'script/rails'
+        else
+          require 'rails/commands'
+        end
       },
       rake: proc {
         require 'rake'
