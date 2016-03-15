@@ -14,7 +14,16 @@ module Theine
         require 'rake'
         ::Rails.application.load_tasks if defined? ::Rails
 
-        ARGV.each do |task|
+        tasks = []
+        ARGV.each do |arg|
+          if arg =~ /^(\w+)=(.*)$/m
+            ENV[$1] = $2
+          else
+            tasks << arg
+          end
+        end
+
+        tasks.each do |task|
           is_test_task = task =~ /^(spec|test)$/
           if is_test_task
             previous_env = ENV["RAILS_ENV"] || ENV["RACK_ENV"] || "development"
