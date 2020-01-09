@@ -1,5 +1,7 @@
 = Theine
 
+CURRENTLY MAINTAINED BY rwilliams https://github.com/rwilliams/theine2
+
 Theine is a Rails application pre-loader designed to work on JRuby.
 It is similar to Zeus, Spring and Spork. The problem with Zeus and Spring is
 that they use `fork` which doesn't work on JRuby.
